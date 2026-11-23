@@ -39,7 +39,7 @@ export interface BgTask {
 }
 
 const tasks = new Map<string, BgTask>();
-const watchedCalls = new Map<string, { command: string; cwd: string }>();
+const watchedCalls = new Map<string, { command: string; cwd: string; killAfter?: number }>();
 
 export function taskDir(): string {
 	return join(homedir(), ".pi", "agent", "tmp", "bgtasks");
@@ -63,11 +63,11 @@ export function runningCount(): number {
  * Register a bash call so its tool_result can be recognised as a timeout.
  * Called from the tool_call handler; the caller applies the timeout itself.
  */
-export function watchCall(toolCallId: string, command: string, cwd: string): void {
-	watchedCalls.set(toolCallId, { command, cwd });
+export function watchCall(toolCallId: string, command: string, cwd: string, killAfter?: number): void {
+	watchedCalls.set(toolCallId, { command, cwd, killAfter });
 }
 
-export function forgetCall(toolCallId: string): { command: string; cwd: string } | undefined {
+export function forgetCall(toolCallId: string): { command: string; cwd: string; killAfter?: number } | undefined {
 	const call = watchedCalls.get(toolCallId);
 	watchedCalls.delete(toolCallId);
 	return call;
@@ -104,6 +104,8 @@ function readTail(path: string, maxBytes: number): string {
 export interface SpawnHooks {
 	notify?: (task: BgTask, outputTail: string) => void;
 	onChange?: () => void;
+	/** Seconds after spawn before the task is killed. */
+	timeoutSeconds?: number;
 }
 
 /**
@@ -137,6 +139,12 @@ export function spawnTask(command: string, cwd: string, hooks: SpawnHooks = {}):
 	};
 	tasks.set(id, task);
 	hooks.onChange?.();
+
+	if (hooks.timeoutSeconds !== undefined && hooks.timeoutSeconds > 0) {
+		setTimeout(() => {
+			if (task.status === "running") killTask(id);
+		}, hooks.timeoutSeconds * 1000).unref();
+	}
 
 	proc.on("exit", (code, signal) => {
 		closeSync(outFd);

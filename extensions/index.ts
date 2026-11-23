@@ -91,9 +91,11 @@ export default function bashTasks(pi: ExtensionAPI) {
 		if (timeout <= 0) return;
 		const input = event.input as { command?: string; timeout?: number };
 		if (typeof input.command !== "string" || !input.command.trim()) return;
-		if (input.timeout !== undefined) return; // model chose its own budget
+		// Cap foreground wait at the bg threshold even when the model set a
+		// larger timeout — a long timeout is not a license to block the turn.
+		const modelTimeout = input.timeout;
 		input.timeout = timeout;
-		watchCall(event.toolCallId, input.command, ctx.cwd);
+		watchCall(event.toolCallId, input.command, ctx.cwd, modelTimeout);
 	});
 
 	pi.on("tool_result", async (event, ctx) => {
@@ -104,6 +106,8 @@ export default function bashTasks(pi: ExtensionAPI) {
 		const task = spawnTask(call.command, call.cwd, {
 			notify: notifyTaskDone,
 			onChange: refreshStatus,
+			// Honour the model's larger timeout as the background task's cap.
+			timeoutSeconds: call.killAfter,
 		});
 		refreshStatus();
 		ctx.ui.notify(`⏳ background task ${task.id} (pid ${task.pid})`, "info");

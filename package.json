@@ -4,6 +4,9 @@
   "description": "Claude-style run_in_background for pi — bash commands move to a detached task on timeout, output streams to a log, agent gets notified on exit",
   "keywords": ["pi-package", "background", "bash", "extension"],
   "type": "module",
+  "scripts": {
+    "test": "node --test extensions/tasks.test.ts"
+  },
   "peerDependencies": {
     "@earendil-works/pi-agent-core": "*",
     "@earendil-works/pi-ai": "*",
