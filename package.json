@@ -1,0 +1,17 @@
+{
+  "name": "@farizapr/pi-bash-tasks",
+  "version": "1.0.0",
+  "description": "Claude-style run_in_background for pi — bash commands move to a detached task on timeout, output streams to a log, agent gets notified on exit",
+  "keywords": ["pi-package", "background", "bash", "extension"],
+  "type": "module",
+  "peerDependencies": {
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "pi": {
+    "extensions": ["./extensions/index.ts"]
+  }
+}
