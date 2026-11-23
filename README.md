@@ -32,6 +32,11 @@ Or add to `~/.pi/agent/settings.json`:
 | `bash_bg_status` | List tasks / read one task's log tail |
 | `bash_bg_kill` | Kill a running task's process group |
 
+## UI
+
+- The footer shows `⏳ N bg` while any tasks are running.
+- `/bg-list` lists tasks (id, status, pid, elapsed, command, log path).
+
 ## Environment
 
 - `PI_BASH_BG_TIMEOUT` — seconds before a foreground `bash` call moves to background (default: `60`)

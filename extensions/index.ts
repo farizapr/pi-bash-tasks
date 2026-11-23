@@ -6,8 +6,9 @@
 // "moved to background" notice. The model is woken with the output tail as a
 // steer message when the process exits — no polling loop, no blocked turn.
 //
-// `bash_bg_status` lists tasks, `bash_bg_kill` stops one. The footer status
-// shows ⏳<n> while any are running.
+// `bash_bg_status` lists tasks, `bash_bg_kill` stops one, `bash_bg_start`
+// launches one directly. The footer status shows ⏳<n> while any are running,
+// and `/bg-list` shows the same list as a slash command.
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
@@ -123,6 +124,25 @@ export default function bashTasks(pi: ExtensionAPI) {
 					`bash_bg_kill to stop it. Do not poll the log with sleep loops.`,
 			},
 		];
+	});
+
+	// ── slash commands ─────────────────────────────────────────────────
+
+	pi.registerCommand("bg-list", {
+		description: "List background bash tasks with status, pid, and log path",
+		handler: async (_args, ctx) => {
+			const tasks = listTasks();
+			if (tasks.length === 0) {
+				ctx.ui.notify("No background tasks.", "info");
+				return;
+			}
+			const rows = tasks.map(
+				(t) =>
+					`${t.id} [${t.status}${t.exitCode != null ? `:${t.exitCode}` : ""}] pid=${t.pid} ` +
+					`elapsed=${Math.round((Date.now() - t.startedAt) / 1000)}s\n  ${t.command}\n  log: ${t.logPath}`,
+			);
+			ctx.ui.notify(rows.join("\n\n"), "info");
+		},
 	});
 
 	// ── model tools ────────────────────────────────────────────────────
